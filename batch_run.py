@@ -24,6 +24,7 @@ every step of every run.
 """
 
 from cmath import sqrt
+from gc import collect
 from bank_reserves.agents import Bank, Person
 import itertools
 from mesa import Model
@@ -33,6 +34,7 @@ from mesa.datacollection import DataCollector
 from mesa.time import RandomActivation
 import numpy as np
 import pandas as pd
+import os
 
 # Start of datacollector functions
 
@@ -198,16 +200,7 @@ class BankReservesModel(Model):
         for i in range(self.run_time):
             self.step()
 
-
-# parameter lists for each parameter to be tested in batch run
-br_params = {
-    "init_people": [25, 100],
-    "rich_threshold": [5, 10],
-    "reserve_percent": 5,
-    "trade_threshold": [0, 15]
-}
-
-if __name__ == "__main__":
+def collect_data(br_params):
     data = batch_run(
         BankReservesModel,
         br_params,
@@ -215,7 +208,58 @@ if __name__ == "__main__":
         # agent_reporters={"Wealth": "wealth"},
     )
     br_df = pd.DataFrame(data)
-    br_df.to_csv("BankReservesModel_Data.csv")
+    br_df.drop(columns=["RunId", "iteration", "Step", "rich_threshold", "reserve_percent", "trade_threshold"], inplace=True)
+    model_df = br_df.drop(columns=["Rich", "Poor", "Middle Class", "Model Params", "Run", "AgentID", "Wealth"], inplace=False)
+    agent_df = br_df.drop(columns=["Wallets", "Money", "Loans", "Mean Money", "Standart Deviation Money", "Model Params", "Run", "Savings"], inplace=False)
+    # timestamp = str(datetime.datetime.now())
+    try: os.mkdir("results")
+    except FileExistsError: pass
+    model_df.to_csv(f"results/model_people_{br_params['init_people']}_tradeThreshold_{br_params['trade_threshold']}.csv")
+    agent_df.to_csv(f"results/agent_people_{br_params['init_people']}_tradeThreshold_{br_params['trade_threshold']}.csv")
+
+# parameter lists for each parameter to be tested in batch run
+br_params = [{
+    "init_people": 25,
+    "rich_threshold": 10,
+    "reserve_percent": 5,
+    "trade_threshold": 0
+},
+{
+    "init_people": 25,
+    "rich_threshold": 10,
+    "reserve_percent": 5,
+    "trade_threshold": 15
+},
+{
+    "init_people": 100,
+    "rich_threshold": 10,
+    "reserve_percent": 5,
+    "trade_threshold": 0
+},
+{
+    "init_people": 100,
+    "rich_threshold": 10,
+    "reserve_percent": 5,
+    "trade_threshold": 15
+}
+]
+
+if __name__ == "__main__":
+    # data = batch_run(
+    #     BankReservesModel,
+    #     br_params,
+    #     # model_reporters={"Rich": get_num_rich_agents},
+    #     # agent_reporters={"Wealth": "wealth"},
+    # )
+    # br_df = pd.DataFrame(data)
+    # model_df = br_df.drop(columns=["Rich", "Poor", "Middle Class", "Model Params", "Run", "AgentID", "Wealth"], inplace=False)
+    # agent_df = br_df.drop(columns=["Wallets", "Money", "Loans", "Mean Money", "Standart Deviation Money", "Model Params", "Run", "Savings"], inplace=False)
+    # timestamp = str(datetime.datetime.now())
+    # model_df.to_csv(f"model_data_inter_1000_steps{timestamp}.csv")
+    # agent_df.to_csv(f"agent_data_inter_1000_steps{timestamp}.csv")
+
+    for br_param in br_params:
+        collect_data(br_param)
 
     # The commented out code below is the equivalent code as above, but done
     # via the legacy BatchRunner class. This is a good example to look at if
