@@ -73,9 +73,9 @@ model_params = {
         "slider",
         "Trade Threshold",
         5,
-        1,
-        20,
-        description="Two people with",
+        0,
+        50,
+        description="Level of segregation between two people with different economic power",
     ),
 }
 

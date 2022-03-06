@@ -23,6 +23,7 @@ directory from which Python was run. The csv file will contain the data from
 every step of every run.
 """
 
+from cmath import sqrt
 from bank_reserves.agents import Bank, Person
 import itertools
 from mesa import Model
@@ -34,6 +35,21 @@ import numpy as np
 import pandas as pd
 
 # Start of datacollector functions
+
+def standart_deviation(model):
+    mean = mean_money(model)
+    sd = 0
+    for agent in model.schedule.agents:
+        sd += (agent.savings - mean)**2
+    sd /= len(model.schedule.agents)
+    return sqrt(sd)
+ 
+def mean_money(model):
+    mean = 0
+    for agent in model.schedule.agents:
+        mean += agent.savings
+    mean /= len(model.schedule.agents)
+    return mean
 
 
 def get_num_rich_agents(model):
@@ -124,6 +140,7 @@ class BankReservesModel(Model):
         width=grid_w,
         init_people=2,
         rich_threshold=10,
+        trade_threshold=15,
         reserve_percent=50,
     ):
         self.uid = next(self.id_gen)
@@ -134,6 +151,7 @@ class BankReservesModel(Model):
         self.grid = MultiGrid(self.width, self.height, torus=True)
         # rich_threshold is the amount of savings a person needs to be considered "rich"
         self.rich_threshold = rich_threshold
+        self.trade_threshold = trade_threshold
         self.reserve_percent = reserve_percent
         # see datacollector functions above
         self.datacollector = DataCollector(
@@ -145,6 +163,8 @@ class BankReservesModel(Model):
                 "Wallets": get_total_wallets,
                 "Money": get_total_money,
                 "Loans": get_total_loans,
+                "Mean Money": mean_money,
+                "Standart Deviation Money": standart_deviation,
                 "Model Params": track_params,
                 "Run": track_run,
             },
@@ -160,7 +180,7 @@ class BankReservesModel(Model):
             x = self.random.randrange(self.width)
             # set y coordinate as a random number within the height of the grid
             y = self.random.randrange(self.height)
-            p = Person(i, (x, y), self, True, self.bank, self.rich_threshold)
+            p = Person(i, (x, y), self, True, self.bank, self.rich_threshold, self.trade_threshold)
             # place the Person object on the grid at coordinates (x, y)
             self.grid.place_agent(p, (x, y))
             # add the Person object to the model schedule
@@ -184,14 +204,15 @@ br_params = {
     "init_people": [25, 100],
     "rich_threshold": [5, 10],
     "reserve_percent": 5,
+    "trade_threshold": [0, 15]
 }
 
 if __name__ == "__main__":
     data = batch_run(
         BankReservesModel,
         br_params,
-        model_reporters={"Rich": get_num_rich_agents},
-        agent_reporters={"Wealth": "wealth"},
+        # model_reporters={"Rich": get_num_rich_agents},
+        # agent_reporters={"Wealth": "wealth"},
     )
     br_df = pd.DataFrame(data)
     br_df.to_csv("BankReservesModel_Data.csv")
