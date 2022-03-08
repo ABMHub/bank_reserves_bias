@@ -8,7 +8,7 @@ Se a diferença do dinheiro entre duas pessoas é maior que o threshold, então 
 
 A ideia por trás dessas alterações era que o modelo anterior é, de certa forma, baseado em sorte. Ascenção econômica (entre pobre, classe média e ricos) poderia ocorrer randomicamente, já que todos trocam a mesma quantidade de dinheiros, e todos trocam entre si sem critérios. A nova proposta traz uma segregação econômica muito maior.
 
-A partir do momento em que ricos raramente fazem trocas com pessoas com menos condições econômicas que eles, e cada pessoa faz trocas de acordo com sua capacidade financeira, temos, teoricamente uma tendência a muito dinheiro em poucas mãos.
+Ou seja, nossa **hipótese causal** para justificar essas mudanças é: a partir do momento em que ricos raramente fazem trocas com pessoas com menos condições econômicas que eles, e cada pessoa faz trocas de acordo com sua capacidade financeira, temos, teoricamente uma tendência a muito dinheiro em poucas mãos.
 
 Para testar todas essas hipóteses levantadas, tiramos alguns dados: 8 arquivos csv que variam as seguintes variáveis: quantidade de pessoas no modelo, e a variável proposta, trade_threshold. Extraímos, também, dados no ponto de vista do modelo, e dados no ponto de vista dos agentes:
 
