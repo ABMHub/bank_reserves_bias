@@ -208,7 +208,7 @@ def collect_data(br_params):
         # agent_reporters={"Wealth": "wealth"},
     )
     br_df = pd.DataFrame(data)
-    br_df.drop(columns=["RunId", "iteration", "Step", "rich_threshold", "reserve_percent", "trade_threshold"], inplace=True)
+    br_df.drop(columns=["init_people", "RunId", "iteration", "Step", "rich_threshold", "reserve_percent", "trade_threshold"], inplace=True)
     model_df = br_df.drop(columns=["Rich", "Poor", "Middle Class", "Model Params", "Run", "AgentID", "Wealth"], inplace=False)
     agent_df = br_df.drop(columns=["Wallets", "Money", "Loans", "Mean Money", "Standart Deviation Money", "Model Params", "Run", "Savings"], inplace=False)
     # timestamp = str(datetime.datetime.now())
