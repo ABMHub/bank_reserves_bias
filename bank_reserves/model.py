@@ -25,6 +25,14 @@ For details see batch_run.py in the same directory as run.py.
 # Start of datacollector functions
 
 
+def compute_gini(model):
+    agent_wealths = [agent.savings for agent in model.schedule.agents]
+    x = sorted(agent_wealths)
+    N = len(model.schedule.agents)
+    B = sum(xi * (N - i) for i, xi in enumerate(x)) / (N * get_total_money(model))
+    if B == 0: return 0
+    return 1 + (1 / N) - 2 * B
+
 def get_num_rich_agents(model):
     """return number of rich agents"""
 
@@ -136,6 +144,7 @@ class BankReserves(Model):
                 "Wallets": get_total_wallets,
                 "Money": get_total_money,
                 "Loans": get_total_loans,
+                "Gini": compute_gini
             },
             agent_reporters={"Wealth": lambda x: x.wealth},
         )

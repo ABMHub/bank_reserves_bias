@@ -91,10 +91,16 @@ chart_element = ChartModule(
     ]
 )
 
+chart_element2 = ChartModule(
+    [
+        {"Label": "Gini", "Color": MID_COLOR}
+    ]
+)
+
 # create instance of Mesa ModularServer
 server = ModularServer(
     BankReserves,
-    [canvas_element, chart_element],
+    [canvas_element, chart_element, chart_element2],
     "Bank Reserves Model",
     model_params=model_params,
 )
