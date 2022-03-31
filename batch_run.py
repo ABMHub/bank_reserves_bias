@@ -35,8 +35,17 @@ from mesa.time import RandomActivation
 import numpy as np
 import pandas as pd
 import os
+from mesa.batchrunner import BatchRunner
 
 # Start of datacollector functions
+
+def compute_gini(model):
+    agent_wealths = [agent.savings for agent in model.schedule.agents]
+    x = sorted(agent_wealths)
+    N = len(model.schedule.agents)
+    B = sum(xi * (N - i) for i, xi in enumerate(x)) / (N * get_total_money(model))
+    if B == 0: return 0
+    return 1 + (1 / N) - 2 * B
 
 def standart_deviation(model):
     mean = mean_money(model)
@@ -127,7 +136,6 @@ def track_run(model):
 class BankReservesModel(Model):
     # id generator to track run number in batch run data
     id_gen = itertools.count(1)
-
     # grid height
     grid_h = 20
     # grid width
@@ -169,6 +177,7 @@ class BankReservesModel(Model):
                 "Standart Deviation Money": standart_deviation,
                 "Model Params": track_params,
                 "Run": track_run,
+                "Gini": compute_gini
             },
             agent_reporters={"Wealth": "wealth"},
         )
@@ -191,58 +200,77 @@ class BankReservesModel(Model):
         self.running = True
 
     def step(self):
-        # collect data
-        self.datacollector.collect(self)
         # tell all the agents in the model to run their step function
         self.schedule.step()
 
     def run_model(self):
         for i in range(self.run_time):
             self.step()
+        
+import matplotlib.pyplot as plt
 
-def collect_data(br_params):
-    data = batch_run(
+def batch_run():
+    fixed_params = {
+        "rich_threshold": 10,
+        "reserve_percent": 5, 
+    }
+
+    variable_params = {
+        "init_people": [25, 100],
+        "trade_threshold": [0, 10, 20]
+        # "init_people": [25],
+        # "trade_threshold": [10]
+    }   
+
+    # quantos experimentos (simulações) realizar?
+    experiments = 1000
+    # quantos passos vai durar a simulação?
+    max_steps = 500
+
+    # The variables parameters will be invoke along with the fixed parameters allowing for either or both to be honored.
+    batch_run = BatchRunner(
         BankReservesModel,
-        br_params,
-        # model_reporters={"Rich": get_num_rich_agents},
-        # agent_reporters={"Wealth": "wealth"},
+        variable_params,
+        fixed_params,
+        iterations=experiments,
+        max_steps=max_steps,
+        model_reporters={
+                "Rich": get_num_rich_agents,
+                "Poor": get_num_poor_agents,
+                "Middle Class": get_num_mid_agents,
+                "Standart Deviation Money": standart_deviation,
+                "Gini": compute_gini
+            },
     )
-    br_df = pd.DataFrame(data)
-    br_df.drop(columns=["init_people", "RunId", "iteration", "Step", "rich_threshold", "reserve_percent", "trade_threshold"], inplace=True)
-    model_df = br_df.drop(columns=["Rich", "Poor", "Middle Class", "Model Params", "Run", "AgentID", "Wealth"], inplace=False)
-    agent_df = br_df.drop(columns=["Wallets", "Money", "Loans", "Mean Money", "Standart Deviation Money", "Model Params", "Run", "Savings"], inplace=False)
-    # timestamp = str(datetime.datetime.now())
-    try: os.mkdir("results")
-    except FileExistsError: pass
-    model_df.to_csv(f"results/model_people_{br_params['init_people']}_tradeThreshold_{br_params['trade_threshold']}.csv")
-    agent_df.to_csv(f"results/agent_people_{br_params['init_people']}_tradeThreshold_{br_params['trade_threshold']}.csv")
+
+    batch_run.run_all()
+
+    run_model_data = batch_run.get_model_vars_dataframe()
+
+    for people in variable_params["init_people"]:
+        for trade in variable_params["trade_threshold"]:
+            df = run_model_data[(run_model_data.init_people == people) & (run_model_data.trade_threshold == trade)]
+            df['Standart Deviation Money'] = df['Standart Deviation Money'].astype(float)
+            df['Gini'] = df['Gini'].astype(float)
+    
+            plt.clf()
+            plt.hist(df.Gini, edgecolor='black', bins=40)
+            try: os.mkdir("images")
+            except FileExistsError: pass
+            plt.savefig("images" + os.sep + f"Gini_people-{people}_trade-{trade}.png")
+
+    run_model_data.to_csv("Bank_Reserves_Bias"+
+        "_iter_"+str(experiments)+
+        "_steps_"+str(max_steps)+
+        "_.csv")
 
 # parameter lists for each parameter to be tested in batch run
-br_params = [{
-    "init_people": 25,
+br_param = {
+    "init_people": [25, 100],
     "rich_threshold": 10,
     "reserve_percent": 5,
-    "trade_threshold": 0
-},
-{
-    "init_people": 25,
-    "rich_threshold": 10,
-    "reserve_percent": 5,
-    "trade_threshold": 15
-},
-{
-    "init_people": 100,
-    "rich_threshold": 10,
-    "reserve_percent": 5,
-    "trade_threshold": 0
-},
-{
-    "init_people": 100,
-    "rich_threshold": 10,
-    "reserve_percent": 5,
-    "trade_threshold": 15
+    "trade_threshold": [0, 10, 20]
 }
-]
 
 if __name__ == "__main__":
     # data = batch_run(
@@ -258,8 +286,9 @@ if __name__ == "__main__":
     # model_df.to_csv(f"model_data_inter_1000_steps{timestamp}.csv")
     # agent_df.to_csv(f"agent_data_inter_1000_steps{timestamp}.csv")
 
-    for br_param in br_params:
-        collect_data(br_param)
+    # for br_param in br_params:
+        # collect_data(br_param1)
+    batch_run()
 
     # The commented out code below is the equivalent code as above, but done
     # via the legacy BatchRunner class. This is a good example to look at if
