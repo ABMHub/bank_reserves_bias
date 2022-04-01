@@ -72,9 +72,9 @@ model_params = {
     "trade_threshold": UserSettableParameter(
         "slider",
         "Trade Threshold",
-        5,
-        0,
-        50,
+        5,  # default
+        0,  # min
+        50, # max
         description="Level of segregation between two people with different economic power",
     ),
 }
@@ -91,6 +91,7 @@ chart_element = ChartModule(
     ]
 )
 
+# char for gini index
 chart_element2 = ChartModule(
     [
         {"Label": "Gini", "Color": MID_COLOR}

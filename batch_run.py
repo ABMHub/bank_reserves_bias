@@ -238,7 +238,6 @@ def batch_run():
                 "Rich": get_num_rich_agents,
                 "Poor": get_num_poor_agents,
                 "Middle Class": get_num_mid_agents,
-                "Standart Deviation Money": standart_deviation,
                 "Gini": compute_gini
             },
     )

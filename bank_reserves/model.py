@@ -24,13 +24,13 @@ For details see batch_run.py in the same directory as run.py.
 
 # Start of datacollector functions
 
-
 def compute_gini(model):
+    """function to compute current gini index"""
     agent_wealths = [agent.savings for agent in model.schedule.agents]
     x = sorted(agent_wealths)
     N = len(model.schedule.agents)
     B = sum(xi * (N - i) for i, xi in enumerate(x)) / (N * get_total_money(model))
-    if B == 0: return 0
+    if B == 0: return 0 # if there hasn't been any steps, return 0
     return 1 + (1 / N) - 2 * B
 
 def get_num_rich_agents(model):

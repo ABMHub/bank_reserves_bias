@@ -73,15 +73,15 @@ class Person(RandomWalker):
                     """select a random person from the people at my location
                     to trade with"""
                     customer = self.random.choice(my_cell)
-                # 50% chance of trading with customer
+                # 50% chance of trading with customer. if they are economically too far away, the chance is 10%
                 if (abs(customer.savings - self.savings) > self.trade_threshold and self.random.randint(0, 9) == 0) or (abs(customer.savings - self.savings) <= self.trade_threshold and self.random.randint(0, 1) == 0):
                     # 50% chance of trading $5
                     if self.random.randint(0, 1) == 0:
-                        # give customer $5 from my wallet (may result in negative wallet)
+                        # give customer $5+ (10% * savings) from my wallet (may result in negative wallet)
                         if self.savings > 0:
                             money = int(self.savings*0.10)+5
                         else:
-                            money = 5
+                            money = 5 # if savings is 0, give $5
                         customer.wallet += money
                         self.wallet -= money
 
